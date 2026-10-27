@@ -1,0 +1,864 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#12233F">
+<title>Lamplight</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600&family=Literata:opsz,wght@7..72,400;7..72,600;7..72,700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --desk: #12233F; --surface: #1A2F52; --raised: #223A62; --ink: #EAF0F9; --muted: #92A6C4;
+    --rule: #2D4670; --brass: #E3B04B; --brass-ink: #1A1608;
+    --lamp: rgba(227, 176, 75, .36); --lamp-glow: rgba(227, 176, 75, .22);
+    --serif: "Literata", Georgia, serif; --sans: "Hanken Grotesk", system-ui, sans-serif;
+    color-scheme: dark;
+  }
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) {
+      --desk: #D4E0F0; --surface: #EDF3FB; --raised: #FFFFFF; --ink: #12233F; --muted: #4D6385;
+      --rule: #B3C5DE; --brass: #B9851E; --brass-ink: #FFFFFF;
+      --lamp: rgba(240, 180, 40, .45); --lamp-glow: rgba(240, 180, 40, .25);
+      color-scheme: light;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--desk); color: var(--ink); font: 15px/1.5 var(--sans);
+    -webkit-tap-highlight-color: transparent; }
+  button, select, input { font: inherit; color: inherit; }
+  button { cursor: pointer; }
+  :focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; border-radius: 6px; }
+  .hidden { display: none !important; }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; scroll-behavior: auto !important; } }
+
+  /* ---------- library ---------- */
+  #library { max-width: 980px; margin: 0 auto; padding: 40px 16px 80px; }
+  .lib-head { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; margin-bottom: 36px; }
+  .wordmark { font: 700 30px/1 var(--serif); letter-spacing: -.01em; margin: 0; }
+  .wordmark::before { content: ""; display: inline-block; width: .5em; height: .5em; border-radius: 50%;
+    background: var(--brass); box-shadow: 0 0 18px 4px var(--lamp-glow); margin-right: .4em; vertical-align: .08em; }
+  .link-btn { background: none; border: 0; color: var(--muted); padding: 6px 2px; border-bottom: 1px solid var(--rule); }
+  .link-btn:hover { color: var(--ink); border-color: var(--brass); }
+
+  .continue { display: grid; grid-template-columns: 132px 1fr; gap: 28px; align-items: center; margin-bottom: 56px; }
+  .continue .cover { width: 132px; }
+  .continue h2 { font: 600 26px/1.2 var(--serif); margin: 0 0 6px; }
+  .continue .where { color: var(--muted); margin: 0 0 18px; }
+  .meter { height: 3px; background: var(--rule); border-radius: 2px; max-width: 420px; margin-bottom: 20px; }
+  .meter i { display: block; height: 100%; background: var(--brass); border-radius: 2px; }
+  .resume { display: inline-flex; align-items: center; gap: 10px; background: var(--brass); color: var(--brass-ink);
+    border: 0; border-radius: 999px; padding: 11px 22px 11px 16px; font-weight: 600; }
+  .resume svg { width: 18px; height: 18px; }
+  .resume:hover { filter: brightness(1.07); }
+
+  .shelf-title { font: 600 18px/1.3 var(--serif); margin: 0 0 18px; }
+  .shelf { display: grid; grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 28px 22px; }
+  .shelf-item { background: none; border: 0; padding: 0; text-align: left; }
+  .cover { aspect-ratio: 504 / 661; width: 100%; border-radius: 2px 5px 5px 2px; overflow: hidden; background: var(--raised);
+    box-shadow: inset 3px 0 0 rgba(0,0,0,.18), 0 10px 24px -10px rgba(0,0,0,.5); }
+  .cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .shelf-item .t { font: 600 14px/1.35 var(--serif); margin-top: 10px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .shelf-item .p { font-size: 13px; color: var(--muted); }
+  .shelf-item:hover .cover { outline: 2px solid var(--brass); outline-offset: 3px; }
+  .add { display: grid; place-items: center; aspect-ratio: 504 / 661; border: 1.5px dashed var(--rule); border-radius: 5px;
+    color: var(--muted); text-align: center; padding: 12px; cursor: pointer; }
+  .add:hover { border-color: var(--brass); color: var(--ink); }
+  .add svg { width: 28px; height: 28px; display: block; margin: 0 auto 8px; }
+  .note { font-size: 13px; color: var(--muted); }
+
+  @media (max-width: 560px) {
+    #library { padding-top: 24px; }
+    .continue { grid-template-columns: 96px 1fr; gap: 18px; }
+    .continue .cover { width: 96px; }
+    .continue h2 { font-size: 20px; }
+    .shelf { grid-template-columns: repeat(3, 1fr); gap: 20px 14px; }
+  }
+
+  /* ---------- reader ---------- */
+  #topbar { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 6px;
+    padding: 8px 10px; padding-top: max(8px, env(safe-area-inset-top));
+    background: color-mix(in srgb, var(--desk) 88%, transparent); backdrop-filter: blur(10px); }
+  .icon { width: 40px; height: 40px; flex: none; display: grid; place-items: center; border-radius: 10px; background: none; border: 0; color: var(--muted); }
+  .icon:hover { color: var(--ink); background: var(--surface); }
+  .icon svg { width: 22px; height: 22px; }
+  .chapter-pick { position: relative; flex: 1; min-width: 0; text-align: center; }
+  #chapterLabel { font: 600 15px/1.3 var(--serif); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; padding: 0 22px; }
+  .chapter-pick svg { position: absolute; right: 2px; top: 50%; translate: 0 -50%; width: 16px; height: 16px; color: var(--muted); pointer-events: none; }
+  #chapter { position: absolute; inset: 0; opacity: 0; width: 100%; cursor: pointer; }
+
+  #pages { max-width: 860px; margin: 0 auto; padding: 8px 12px 190px; }
+  .page { position: relative; margin: 0 auto 18px; background: #fff; cursor: text;
+    box-shadow: 0 1px 2px rgba(0,0,0,.25), 0 18px 40px -22px rgba(0,0,0,.6); }
+  .page img { position: absolute; inset: 0; width: 100%; height: 100%; display: block; user-select: none; -webkit-user-drag: none; }
+  .pnum { position: absolute; left: 100%; top: 0; margin-left: 12px; font-size: 12px; color: var(--muted); }
+  @media (max-width: 960px) { .pnum { display: none; } }
+  .hl { position: absolute; border-radius: 3px; pointer-events: none; background: var(--lamp); mix-blend-mode: multiply;
+    box-shadow: 0 0 14px 4px var(--lamp-glow); }
+  .hl { animation: sweep .38s cubic-bezier(.3, .7, .3, 1) both; }
+  @keyframes sweep { from { clip-path: inset(0 100% 0 0 round 3px); } to { clip-path: inset(0 0 0 0 round 3px); } }
+
+  /* book mode: one page at a time, turned like paper */
+  body.paged { overflow: hidden; overscroll-behavior: none; }
+  body.paged #pages { position: fixed; left: 0; right: 0; top: var(--stage-top, 60px); bottom: var(--stage-bottom, 140px);
+    max-width: none; padding: 0; perspective: 2200px; touch-action: pan-y pinch-zoom; }
+  body.paged .page { position: absolute; left: 50%; top: 50%; margin: 0; translate: -50% -50%; display: none;
+    width: var(--page-w); height: var(--page-h); aspect-ratio: auto !important; transform-style: preserve-3d; }
+  body.paged .page.shown { display: block; }
+  body.paged .pnum { display: none; }
+  .page::after { content: ""; position: absolute; inset: 0; pointer-events: none; opacity: 0;
+    background: linear-gradient(to right, rgba(0,0,0,.28), rgba(0,0,0,0) 35%, rgba(255,255,255,.08) 70%, rgba(0,0,0,.18)); }
+  body.paged .page.turn-out { z-index: 3; transform-origin: left center; animation: turnOut .62s cubic-bezier(.35, .1, .25, 1) forwards; }
+  body.paged .page.turn-in { z-index: 3; transform-origin: left center; animation: turnIn .62s cubic-bezier(.35, .1, .25, 1) forwards; }
+  body.paged .page.turn-out::after, body.paged .page.turn-in::after { animation: shade .62s ease-in-out forwards; }
+  body.paged .page.under { z-index: 1; animation: settle .62s ease-out; }
+  @keyframes turnOut { from { transform: rotateY(0); } to { transform: rotateY(-100deg); opacity: .6; } }
+  @keyframes turnIn { from { transform: rotateY(-100deg); opacity: .6; } to { transform: rotateY(0); } }
+  @keyframes shade { 50% { opacity: 1; } }
+  @keyframes settle { from { filter: brightness(.82); } }
+  .edge-hint { position: fixed; top: 50%; translate: 0 -50%; z-index: 4; width: 34px; height: 64px; display: none; place-items: center;
+    background: color-mix(in srgb, var(--surface) 80%, transparent); border: 0; color: var(--muted); border-radius: 10px; }
+  .edge-hint svg { width: 20px; height: 20px; }
+  #edgePrev { left: 8px; } #edgeNext { right: 8px; }
+  @media (hover: hover) { body.paged .edge-hint { display: grid; } }
+
+  /* opening a book from the shelf */
+  .opening { position: fixed; z-index: 60; perspective: 1600px; pointer-events: none;
+    transition: left .5s cubic-bezier(.3, .7, .2, 1), top .5s cubic-bezier(.3, .7, .2, 1), width .5s cubic-bezier(.3, .7, .2, 1), height .5s cubic-bezier(.3, .7, .2, 1); }
+  .opening .leaf { position: absolute; inset: 0; transform-origin: left center; transition: transform .55s .38s cubic-bezier(.5, 0, .3, 1), opacity .3s .7s;
+    box-shadow: 0 30px 60px -20px rgba(0,0,0,.7); border-radius: 2px 5px 5px 2px; overflow: hidden; }
+  .opening .leaf img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .opening .inside { position: absolute; inset: 0; background: #fff; border-radius: 2px; }
+  .opening.open .leaf { transform: rotateY(-115deg); opacity: 0; }
+  #reader.arrive { animation: arrive .45s ease-out; }
+  @keyframes arrive { from { opacity: 0; } }
+
+  @media (prefers-reduced-motion: reduce) {
+    body.paged .page.turn-out { animation: fadeOut .2s forwards; }
+    body.paged .page.turn-in { animation: none; }
+    @keyframes fadeOut { to { opacity: 0; } }
+  }
+  body.darkpages .page { background: #141a24; }
+  body.darkpages .page img { filter: invert(.9) hue-rotate(180deg) sepia(.08); }
+  body.darkpages .hl { mix-blend-mode: screen; background: rgba(227, 176, 75, .30); }
+
+  #back-to { position: fixed; left: 50%; translate: -50% 0; bottom: calc(150px + env(safe-area-inset-bottom)); z-index: 21;
+    display: inline-flex; align-items: center; gap: 8px; background: var(--brass); color: var(--brass-ink); border: 0;
+    border-radius: 999px; padding: 9px 16px 9px 12px; font-weight: 600; box-shadow: 0 8px 24px rgba(0,0,0,.35); }
+  #back-to svg { width: 18px; height: 18px; }
+
+  /* dock */
+  #dock { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; padding: 0 16px max(14px, env(safe-area-inset-bottom));
+    background: linear-gradient(to top, var(--desk) 70%, transparent); }
+  .dock-inner { max-width: 720px; margin: 0 auto; background: var(--surface); border-radius: 18px; padding: 14px 16px 12px;
+    box-shadow: 0 -1px 0 var(--rule) inset, 0 16px 40px -12px rgba(0,0,0,.55); }
+  .rail { position: relative; height: 18px; margin-bottom: 8px; }
+  .rail .track { position: absolute; left: 0; right: 0; top: 8px; height: 3px; background: var(--rule); border-radius: 2px; }
+  .rail .fill { position: absolute; left: 0; top: 8px; height: 3px; background: var(--brass); border-radius: 2px; }
+  .rail .tick { position: absolute; top: 5px; width: 1px; height: 9px; background: var(--muted); opacity: .55; }
+  .rail .knob { position: absolute; top: 3px; width: 13px; height: 13px; margin-left: -6.5px; border-radius: 50%;
+    background: var(--brass); box-shadow: 0 0 0 4px var(--lamp-glow); }
+  #seek { position: absolute; inset: 0; width: 100%; opacity: 0; margin: 0; cursor: pointer; }
+  .dock-row { display: flex; align-items: center; gap: 6px; }
+  .now { flex: 1; min-width: 0; }
+  .now b { display: block; font: 600 14px/1.3 var(--serif); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .now span { font-size: 12.5px; color: var(--muted); }
+  #play { width: 52px; height: 52px; border-radius: 50%; background: var(--brass); color: var(--brass-ink); position: relative; }
+  #play:hover { background: var(--brass); filter: brightness(1.07); }
+  #play svg { width: 24px; height: 24px; }
+  #play.waiting::after { content: ""; position: absolute; inset: -4px; border-radius: 50%; border: 2px solid transparent;
+    border-top-color: var(--brass); animation: spin .8s linear infinite; }
+  @keyframes spin { to { rotate: 360deg; } }
+  .pill { height: 34px; padding: 0 11px; border-radius: 999px; border: 1px solid var(--rule); background: none; color: var(--ink);
+    font-size: 13px; font-weight: 600; white-space: nowrap; }
+  .pill:hover { border-color: var(--brass); }
+  .dock-side { display: flex; gap: 6px; flex: 1; justify-content: flex-end; }
+  @media (max-width: 560px) {
+    #dock { padding: 0 8px max(8px, env(safe-area-inset-bottom)); }
+    .dock-inner { padding: 12px 12px 10px; border-radius: 16px; }
+    .now { display: none; }
+    .dock-row { justify-content: space-between; }
+    .dock-side { flex: none; }
+    .mobile-now { display: block !important; }
+  }
+  .mobile-now { display: none; margin: -2px 0 6px; font-size: 12.5px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  #loading { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; background: var(--desk); color: var(--muted); text-align: center; }
+  #loading .lamp { width: 14px; height: 14px; border-radius: 50%; background: var(--brass); margin: 0 auto 18px;
+    box-shadow: 0 0 30px 10px var(--lamp-glow); animation: breathe 1.6s ease-in-out infinite; }
+  @keyframes breathe { 50% { opacity: .45; } }
+
+  /* ---------- settings sheet ---------- */
+  #sheet { position: fixed; inset: 0; z-index: 40; background: rgba(5, 12, 26, .58); display: flex; align-items: flex-end; justify-content: center; }
+  #sheet .card { width: 100%; max-width: 480px; background: var(--surface); border-radius: 20px 20px 0 0; padding: 22px 20px;
+    padding-bottom: max(22px, env(safe-area-inset-bottom)); max-height: 88vh; overflow: auto; animation: rise .22s ease-out; }
+  @keyframes rise { from { translate: 0 24px; opacity: 0; } }
+  @media (min-width: 700px) { #sheet { align-items: center; } #sheet .card { border-radius: 20px; } }
+  #sheet h2 { font: 600 20px/1.2 var(--serif); margin: 0 0 18px; }
+  .field { margin-bottom: 18px; }
+  .field > label, .field > .lbl { display: block; font-size: 13px; color: var(--muted); margin-bottom: 7px; }
+  .field select { width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--rule); background: var(--desk); }
+  .voice-row { display: flex; gap: 8px; }
+  .voice-row select { flex: 1; }
+  .speeds { display: flex; flex-wrap: wrap; gap: 6px; }
+  .speeds button { min-width: 50px; }
+  .speeds button[aria-pressed="true"] { background: var(--brass); color: var(--brass-ink); border-color: var(--brass); }
+  .toggle { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 0; border-top: 1px solid var(--rule); }
+  .toggle input { width: 20px; height: 20px; accent-color: var(--brass); }
+  .phone { display: flex; gap: 16px; align-items: center; padding-top: 16px; border-top: 1px solid var(--rule); margin-top: 6px; }
+  .phone .code { background: #fff; padding: 6px; border-radius: 10px; line-height: 0; flex: none; }
+  .phone .code svg { width: 116px; height: 116px; display: block; shape-rendering: crispEdges; }
+  .phone b { font: 600 15px/1.3 var(--serif); display: block; margin-bottom: 4px; }
+  .phone code { font-size: 13px; color: var(--brass); word-break: break-all; }
+  .done { width: 100%; margin-top: 18px; background: var(--brass); color: var(--brass-ink); border: 0; border-radius: 12px; padding: 12px; font-weight: 600; }
+</style>
+</head>
+<body>
+
+<section id="library" class="hidden">
+  <header class="lib-head">
+    <h1 class="wordmark">Lamplight</h1>
+    <button class="link-btn" id="libPhone">Listen on your phone</button>
+  </header>
+  <div id="continue"></div>
+  <h2 class="shelf-title">Your books</h2>
+  <div class="shelf" id="shelf"></div>
+  <p class="note" id="uploadNote"></p>
+</section>
+
+<section id="reader" class="hidden">
+  <div id="topbar">
+    <button class="icon" id="backBtn" title="Your books" aria-label="Back to your books">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+    </button>
+    <div class="chapter-pick">
+      <span id="chapterLabel"></span>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
+      <select id="chapter" aria-label="Jump to a chapter"></select>
+    </div>
+    <button class="icon" id="settingsBtn" title="Voice and settings" aria-label="Voice and settings">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg>
+    </button>
+  </div>
+  <div id="pages"></div>
+  <button class="edge-hint" id="edgePrev" aria-label="Previous page">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+  <button class="edge-hint" id="edgeNext" aria-label="Next page">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg></button>
+  <button id="back-to" class="hidden">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M6 13l6 6 6-6"/></svg>
+    Back to where I'm reading
+  </button>
+  <div id="dock"><div class="dock-inner">
+    <div class="rail" id="rail">
+      <div class="track"></div><div class="fill" id="railFill"></div><div id="ticks"></div><div class="knob" id="railKnob"></div>
+      <input type="range" id="seek" min="0" value="0" aria-label="Position in the book">
+    </div>
+    <div class="mobile-now" id="mobileNow"></div>
+    <div class="dock-row">
+      <div class="now"><b id="nowChapter"></b><span id="nowPos"></span></div>
+      <button class="icon" id="prevBtn" title="Previous sentence (←)" aria-label="Previous sentence">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 5h2v14H6zM20 5v14L9 12z"/></svg>
+      </button>
+      <button class="icon" id="play" title="Play or pause (space)" aria-label="Play">
+        <svg id="playIcon" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+      </button>
+      <button class="icon" id="nextBtn" title="Next sentence (→)" aria-label="Next sentence">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 5h2v14h-2zM4 5v14l11-7z"/></svg>
+      </button>
+      <div class="dock-side">
+        <button class="pill" id="speedBtn" title="Reading speed">1×</button>
+      </div>
+    </div>
+  </div></div>
+</section>
+
+<div id="sheet" class="hidden" role="dialog" aria-modal="true" aria-labelledby="sheetTitle"><div class="card">
+  <h2 id="sheetTitle">Voice and settings</h2>
+  <div class="field">
+    <label for="voice">Voice</label>
+    <div class="voice-row">
+      <select id="voice"></select>
+      <button class="pill" id="previewBtn">Preview</button>
+    </div>
+    <p class="note" id="voiceHint"></p>
+  </div>
+  <div class="field">
+    <span class="lbl">Speed</span>
+    <div class="speeds" id="speeds"></div>
+  </div>
+  <div class="field">
+    <span class="lbl">Layout</span>
+    <div class="speeds" id="layouts">
+      <button class="pill" data-l="book">Book pages</button>
+      <button class="pill" data-l="scroll">Continuous scroll</button>
+    </div>
+  </div>
+  <label class="toggle"><span>Dark pages</span><input type="checkbox" id="darkToggle"></label>
+  <label class="toggle"><span>Keep the screen on while reading</span><input type="checkbox" id="wakeToggle" checked></label>
+  <div class="phone">
+    <div class="code" id="qr"></div>
+    <div><b>Listen on your phone</b><code id="phoneUrl"></code>
+      <p class="note">Scan with your phone's camera while it's on the same Wi-Fi. Your place carries over between devices.</p></div>
+  </div>
+  <button class="done" id="closeSheet">Done</button>
+</div></div>
+
+<div id="loading" class="hidden"><div><div class="lamp"></div><div id="loadingText">Opening your book</div></div></div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const SPEEDS = [0.8, 0.9, 1, 1.1, 1.2, 1.3, 1.5, 1.75, 2];
+const store = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
+};
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+let info = null;
+let bid = null, book = null, byPage = [], chapters = [];
+let cur = 0, playing = false, follow = true, token = 0;
+let voice = null, speed = store.get("speed", 1);
+const clips = new Map();               // sentence index -> {promise, ctrl}
+const audio = new Audio();
+audio.preservesPitch = true;
+const preview = new Audio();
+let wakeLock = null;
+
+async function api(path, opts) {
+  const r = await fetch(path, opts);
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+const coverUrl = (id) => `/api/book/${id}/page/0?w=300`;
+
+// ---------- library ----------
+async function showLibrary() {
+  stop();
+  bid = null; book = null;
+  document.title = "Lamplight";
+  $("reader").classList.add("hidden");
+  $("library").classList.remove("hidden");
+  const books = await api("/api/books");
+  const started = books.filter((b) => b.progress.sentence > 0).sort((a, b) => (b.progress.at || 0) - (a.progress.at || 0));
+  const last = started[0];
+  $("continue").innerHTML = last ? `
+    <div class="continue">
+      <div class="cover"><img src="${coverUrl(last.id)}" alt=""></div>
+      <div>
+        <h2>${esc(last.title)}</h2>
+        <p class="where">${esc(last.progress.chapter || "")}${last.progress.chapter ? ", " : ""}${last.progress.percent || 0}% through</p>
+        <div class="meter"><i style="width:${last.progress.percent || 0}%"></i></div>
+        <button class="resume" data-id="${last.id}">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>Keep listening</button>
+      </div>
+    </div>` : "";
+  const r = $("continue").querySelector(".resume");
+  if (r) r.onclick = () => openFromShelf(r.dataset.id, $("continue").querySelector(".cover"));
+
+  $("shelf").innerHTML = books.map((b) => `
+    <button class="shelf-item" data-id="${b.id}">
+      <div class="cover"><img loading="lazy" src="${coverUrl(b.id)}" alt=""></div>
+      <div class="t">${esc(b.title)}</div>
+      <div class="p">${b.progress.percent ? b.progress.percent + "% through" : "Not started"}</div>
+    </button>`).join("") + `
+    <label class="add" tabindex="0">
+      <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Add a PDF</span>
+      <input type="file" id="upload" accept="application/pdf" hidden>
+    </label>`;
+  $("shelf").querySelectorAll(".shelf-item").forEach((el) => el.onclick = () => openFromShelf(el.dataset.id, el.querySelector(".cover")));
+  $("upload").onchange = uploadBook;
+}
+
+async function uploadBook(e) {
+  const f = e.target.files[0];
+  if (!f) return;
+  $("uploadNote").textContent = `Adding ${f.name}…`;
+  const fd = new FormData();
+  fd.append("file", f);
+  try {
+    const r = await api("/api/books", { method: "POST", body: fd });
+    $("uploadNote").textContent = "";
+    location.hash = "book=" + r.id;
+  } catch (err) { $("uploadNote").textContent = "Couldn't add that file: " + err.message; }
+}
+
+// ---------- reader ----------
+function imgWidth() {
+  const want = Math.min(860, innerWidth) * (devicePixelRatio || 1);
+  return [600, 900, 1200, 1600, 2000].find((w) => w >= want) || 2000;
+}
+
+async function openBook(id) {
+  stop();
+  bid = id;
+  $("library").classList.add("hidden");
+  $("reader").classList.remove("hidden");
+  $("loadingText").textContent = "Opening your book";
+  $("loading").classList.remove("hidden");
+  const slow = setTimeout(() => { $("loadingText").textContent = "Preparing this book for the first time. This takes about 10 seconds."; }, 1500);
+  let data, prog;
+  try { [data, prog] = await Promise.all([api(`/api/book/${id}`), api(`/api/progress/${id}`)]); }
+  catch { clearTimeout(slow); $("loadingText").textContent = "This book couldn't be opened. Go back and try another file."; return; }
+  clearTimeout(slow);
+  $("loading").classList.add("hidden");
+  book = data;
+  document.title = book.title;
+  voice = pickVoice(prog.voice || store.get("voice", null));
+  if (prog.speed) speed = prog.speed;
+  syncSettings();
+
+  byPage = book.pages.map(() => []);
+  book.sentences.forEach((s, i) => { for (const p of new Set(s.r.map((r) => r[0]))) byPage[p].push(i); });
+
+  chapters = book.toc.filter((t) => t[0] <= 3);
+  $("chapter").innerHTML = chapters.map((t, i) =>
+    `<option value="${i}">${" ".repeat(Math.max(0, t[0] - 1))}${esc(t[1])}</option>`).join("");
+  const n = book.sentences.length;
+  $("ticks").innerHTML = chapters.filter((t) => t[0] <= 2 && /chapter|part/i.test(t[1]))
+    .map((t) => `<div class="tick" style="left:${t[2] / n * 100}%"></div>`).join("");
+
+  const w = imgWidth();
+  const frag = document.createDocumentFragment();
+  book.pages.forEach(([pw, ph], i) => {
+    const d = document.createElement("div");
+    d.className = "page";
+    d.dataset.p = i;
+    d.style.aspectRatio = `${pw} / ${ph}`;
+    d.innerHTML = `<img loading="lazy" alt="Page ${i + 1}" src="/api/book/${id}/page/${i}?w=${w}"><span class="pnum">${i + 1}</span>`;
+    d.addEventListener("click", onPageClick);
+    frag.appendChild(d);
+  });
+  $("pages").replaceChildren(frag);
+  $("seek").max = n - 1;
+  shownPage = -1;
+  applyLayout();
+
+  follow = true;
+  setCur(Math.min(prog.sentence || 0, n - 1), true);
+  requestAnimationFrame(() => scrollToCur(true));
+}
+
+let hlEls = [];
+function setCur(i, quiet) {
+  cur = Math.max(0, Math.min(i, book.sentences.length - 1));
+  hlEls.forEach((e) => e.remove());
+  hlEls = [];
+  for (const [p, x0, y0, x1, y1] of book.sentences[cur].r) {
+    const [pw, ph] = book.pages[p];
+    const el = document.createElement("div");
+    el.className = "hl";
+    const pad = 1.5;
+    el.style.left = ((x0 - pad) / pw * 100) + "%";
+    el.style.top = ((y0 - pad) / ph * 100) + "%";
+    el.style.width = ((x1 - x0 + 2 * pad) / pw * 100) + "%";
+    el.style.height = ((y1 - y0 + 2 * pad) / ph * 100) + "%";
+    $("pages").children[p].appendChild(el);
+    hlEls.push(el);
+  }
+  updateStatus();
+  if (!quiet) saveProgress();
+  if (follow) scrollToCur(false);
+}
+
+function chapterAt(i) {
+  let ci = 0;
+  chapters.forEach((t, k) => { if (t[2] <= i) ci = k; });
+  return ci;
+}
+function mainChapterName() {
+  const ci = chapterAt(cur);
+  const main = chapters.slice(0, ci + 1).reverse().find((t) => t[0] <= 2);
+  return main ? main[1] : book.title;
+}
+
+function updateStatus() {
+  const ci = chapterAt(cur);
+  $("chapter").value = ci;
+  $("chapterLabel").textContent = chapters[ci] ? chapters[ci][1] : book.title;
+  const page = book.sentences[cur].r[0][0] + 1;
+  const frac = cur / Math.max(1, book.sentences.length - 1);
+  const pct = Math.floor(frac * 100);
+  const name = mainChapterName();
+  $("nowChapter").textContent = name;
+  $("nowPos").textContent = `Page ${page} of ${book.pages.length}, ${pct}% through`;
+  $("mobileNow").textContent = `Page ${page} of ${book.pages.length}, ${pct}% through`;
+  $("seek").value = cur;
+  $("railFill").style.width = frac * 100 + "%";
+  $("railKnob").style.left = frac * 100 + "%";
+  if ("mediaSession" in navigator) {
+    navigator.mediaSession.metadata = new MediaMetadata({ title: name, artist: book.title,
+      artwork: [{ src: coverUrl(bid), sizes: "300x393", type: "image/jpeg" }] });
+  }
+}
+
+function scrollToCur(instant) {
+  const el = hlEls[0];
+  if (!el) return;
+  if (layout === "book") {
+    showPage(book.sentences[cur].r[0][0], instant);
+    $("back-to").classList.add("hidden");
+    return;
+  }
+  const r = el.getBoundingClientRect();
+  const dockTop = $("dock").getBoundingClientRect().top;
+  if (!instant && r.top > 80 && r.bottom < dockTop - innerHeight * 0.2) return;
+  window.scrollTo({ top: scrollY + r.top - innerHeight * 0.3, behavior: instant ? "auto" : "smooth" });
+  $("back-to").classList.add("hidden");
+}
+
+function onPageClick(e) {
+  const pageEl = e.currentTarget;
+  const p = +pageEl.dataset.p;
+  const box = pageEl.getBoundingClientRect();
+  const [pw, ph] = book.pages[p];
+  if (layout === "book") {
+    const rel = (e.clientX - box.left) / box.width;
+    if (rel < 0.14) { turnPage(-1); return; }
+    if (rel > 0.86) { turnPage(1); return; }
+  }
+  const x = (e.clientX - box.left) / box.width * pw;
+  const y = (e.clientY - box.top) / box.height * ph;
+  let best = null, bestD = Infinity;
+  for (const i of byPage[p]) {
+    for (const [rp, x0, y0, x1, y1] of book.sentences[i].r) {
+      if (rp !== p) continue;
+      const dx = x < x0 ? x0 - x : x > x1 ? x - x1 : 0;
+      const dy = y < y0 ? y0 - y : y > y1 ? y - y1 : 0;
+      const d = dy * 3 + dx;
+      if (d < bestD) { bestD = d; best = i; }
+    }
+  }
+  if (best === null || bestD > 40) return;
+  follow = true;
+  $("back-to").classList.add("hidden");
+  jump(best, true);
+}
+
+// ---------- audio ----------
+function fetchClip(i) {
+  if (i < 0 || i >= book.sentences.length) return null;
+  if (!clips.has(i)) {
+    const ctrl = new AbortController();
+    const promise = fetch(`/api/book/${bid}/tts/${i}?voice=${encodeURIComponent(voice)}`, { signal: ctrl.signal })
+      .then((r) => { if (!r.ok) throw new Error("speech failed"); return r.blob(); })
+      .then((b) => URL.createObjectURL(b));
+    promise.catch(() => clips.delete(i));
+    clips.set(i, { promise, ctrl });
+  }
+  return clips.get(i).promise;
+}
+
+function dropClip(i) {
+  const c = clips.get(i);
+  if (!c) return;
+  c.ctrl.abort();
+  c.promise.then((u) => URL.revokeObjectURL(u)).catch(() => {});
+  clips.delete(i);
+}
+function pruneClips() { for (const i of [...clips.keys()]) if (i < cur - 2 || i > cur + 6) dropClip(i); }
+function clearClips() { for (const i of [...clips.keys()]) dropClip(i); }
+
+async function playCur() {
+  const my = ++token;
+  const i = cur;
+  pruneClips();
+  $("play").classList.add("waiting");
+  let url;
+  try { url = await fetchClip(i); } catch { if (my === token) { $("play").classList.remove("waiting"); setPlaying(false); } return; }
+  if (my !== token || !playing) return;
+  $("play").classList.remove("waiting");
+  audio.src = url;
+  audio.defaultPlaybackRate = speed;
+  audio.playbackRate = speed;
+  try { await audio.play(); } catch { if (my === token) setPlaying(false); return; }
+  for (let k = 1; k <= 4; k++) fetchClip(i + k);
+}
+
+audio.addEventListener("ended", () => {
+  if (!playing) return;
+  if (cur >= book.sentences.length - 1) { setPlaying(false); return; }
+  setCur(cur + 1);
+  playCur();
+});
+
+function setPlaying(on) {
+  playing = on;
+  if (!on) $("play").classList.remove("waiting");
+  $("playIcon").innerHTML = on ? '<path d="M7 5h4v14H7zM13 5h4v14h-4z"/>' : '<path d="M8 5v14l11-7z"/>';
+  $("play").setAttribute("aria-label", on ? "Pause" : "Play");
+  if ("mediaSession" in navigator) navigator.mediaSession.playbackState = on ? "playing" : "paused";
+  updateWakeLock();
+}
+
+function play() {
+  if (!book) return;
+  preview.pause();
+  setPlaying(true);
+  if (follow) scrollToCur(false);
+  playCur();
+}
+function pause() { setPlaying(false); token++; audio.pause(); }
+function stop() { pause(); clearClips(); }
+function toggle() { playing ? pause() : play(); }
+
+function jump(i, startPlaying) {
+  token++;
+  audio.pause();
+  setCur(i);
+  if (startPlaying || playing) play();
+}
+
+async function updateWakeLock() {
+  const want = playing && $("wakeToggle").checked && document.visibilityState === "visible";
+  try {
+    if (want && !wakeLock && "wakeLock" in navigator) {
+      wakeLock = await navigator.wakeLock.request("screen");
+      wakeLock.addEventListener("release", () => { wakeLock = null; });
+    } else if (!want && wakeLock) { await wakeLock.release(); wakeLock = null; }
+  } catch { wakeLock = null; }
+}
+document.addEventListener("visibilitychange", updateWakeLock);
+
+if ("mediaSession" in navigator) {
+  navigator.mediaSession.setActionHandler("play", play);
+  navigator.mediaSession.setActionHandler("pause", pause);
+  navigator.mediaSession.setActionHandler("nexttrack", () => jump(cur + 1));
+  navigator.mediaSession.setActionHandler("previoustrack", () => jump(cur - 1));
+}
+
+// ---------- progress ----------
+let saveTimer = null;
+function saveProgress() {
+  clearTimeout(saveTimer);
+  const id = bid, body = { sentence: cur, voice, speed, chapter: mainChapterName(),
+    percent: Math.floor(cur / book.sentences.length * 100), at: Date.now() };
+  saveTimer = setTimeout(() => {
+    fetch(`/api/progress/${id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).catch(() => {});
+  }, 1200);
+}
+
+// ---------- scrolling by hand pauses auto-follow ----------
+function userScrolled() {
+  if (!book || layout === "book" || $("reader").classList.contains("hidden") || !$("sheet").classList.contains("hidden")) return;
+  follow = false;
+  $("back-to").classList.remove("hidden");
+}
+addEventListener("wheel", userScrolled, { passive: true });
+addEventListener("touchmove", (e) => { if (!e.target.closest("#dock")) userScrolled(); }, { passive: true });
+$("back-to").onclick = () => { follow = true; scrollToCur(true); };
+
+// ---------- controls ----------
+$("play").onclick = toggle;
+$("prevBtn").onclick = () => jump(cur - 1);
+$("nextBtn").onclick = () => jump(cur + 1);
+$("backBtn").onclick = () => { location.hash = ""; };
+$("chapter").onchange = (e) => { follow = true; jump(chapters[+e.target.value][2]); scrollToCur(true); };
+$("seek").oninput = (e) => { follow = true; jump(+e.target.value); scrollToCur(true); };
+$("speedBtn").onclick = () => setSpeed(SPEEDS[(SPEEDS.indexOf(speed) + 1) % SPEEDS.length] ?? 1);
+
+function setSpeed(s) {
+  speed = s;
+  store.set("speed", s);
+  audio.defaultPlaybackRate = s;
+  audio.playbackRate = s;
+  syncSettings();
+  if (book) saveProgress();
+}
+
+function pickVoice(v) {
+  const all = { ...info.voices.natural, ...info.voices.fast };
+  return v && all[v] ? v : info.defaultVoice;
+}
+
+function syncSettings() {
+  $("speedBtn").textContent = speed + "×";
+  $("speeds").querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", +b.dataset.s === speed));
+  if (voice) $("voice").value = voice;
+  $("voiceHint").textContent = voice && voice.startsWith("cb:")
+    ? "Natural voices sound more human and take a moment to start."
+    : "Fast voices start instantly and sound a little flatter.";
+}
+
+document.addEventListener("keydown", (e) => {
+  if (!book || $("reader").classList.contains("hidden") || !$("sheet").classList.contains("hidden")) return;
+  if (["SELECT", "INPUT", "BUTTON"].includes(e.target.tagName) && e.code !== "ArrowRight" && e.code !== "ArrowLeft") return;
+  if (e.code === "Space") { e.preventDefault(); toggle(); }
+  else if (e.code === "ArrowRight") { e.preventDefault(); jump(cur + 1); }
+  else if (e.code === "ArrowLeft") { e.preventDefault(); jump(cur - 1); }
+  else if (e.code === "PageDown" || e.code === "PageUp") userScrolled();
+});
+
+// ---------- settings sheet ----------
+function openSheet() { $("sheet").classList.remove("hidden"); $("closeSheet").focus(); }
+function closeSheet() { $("sheet").classList.add("hidden"); preview.pause(); }
+$("settingsBtn").onclick = openSheet;
+$("libPhone").onclick = openSheet;
+$("closeSheet").onclick = closeSheet;
+$("sheet").onclick = (e) => { if (e.target.id === "sheet") closeSheet(); };
+document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !$("sheet").classList.contains("hidden")) closeSheet(); });
+$("speeds").innerHTML = SPEEDS.map((s) => `<button class="pill" data-s="${s}">${s}×</button>`).join("");
+$("speeds").onclick = (e) => { const b = e.target.closest("button"); if (b) setSpeed(+b.dataset.s); };
+$("voice").onchange = (e) => {
+  voice = e.target.value;
+  store.set("voice", voice);
+  syncSettings();
+  clearClips();
+  if (book) { saveProgress(); if (playing) jump(cur); }
+};
+$("previewBtn").onclick = async () => {
+  const btn = $("previewBtn");
+  btn.textContent = "Loading…";
+  preview.src = `/api/sample?voice=${encodeURIComponent($("voice").value)}`;
+  preview.playbackRate = speed;
+  try { await preview.play(); } catch {}
+  btn.textContent = "Preview";
+};
+$("darkToggle").checked = store.get("darkpages", false);
+document.body.classList.toggle("darkpages", $("darkToggle").checked);
+$("darkToggle").onchange = (e) => { store.set("darkpages", e.target.checked); document.body.classList.toggle("darkpages", e.target.checked); };
+$("wakeToggle").onchange = updateWakeLock;
+
+// ---------- book mode ----------
+let layout = store.get("layout", innerWidth < 760 ? "book" : "scroll");
+let shownPage = -1;
+
+function fitPages() {
+  if (!book) return;
+  const top = $("topbar").getBoundingClientRect().bottom + 6;
+  const bottom = innerHeight - $("dock").querySelector(".dock-inner").getBoundingClientRect().top + 10;
+  document.body.style.setProperty("--stage-top", top + "px");
+  document.body.style.setProperty("--stage-bottom", bottom + "px");
+  const sw = innerWidth - (innerWidth > 700 ? 120 : 16), sh = innerHeight - top - bottom;
+  const [pw, ph] = book.pages[Math.min(book.pages.length - 1, 30)];
+  const s = Math.min(sw / pw, sh / ph);
+  document.body.style.setProperty("--page-w", Math.floor(pw * s) + "px");
+  document.body.style.setProperty("--page-h", Math.floor(ph * s) + "px");
+}
+addEventListener("resize", () => { if (layout === "book") fitPages(); });
+
+function applyLayout() {
+  document.body.classList.toggle("paged", layout === "book" && !!book);
+  $("layouts").querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.l === layout));
+  if (!book) return;
+  const pages = $("pages").children;
+  if (layout === "book") {
+    fitPages();
+    shownPage = -1;
+    showPage(book.sentences[cur].r[0][0], true);
+  } else {
+    for (const el of pages) el.classList.remove("shown", "turn-in", "turn-out", "under");
+    requestAnimationFrame(() => scrollToCur(true));
+  }
+}
+
+function showPage(p, instant) {
+  const pages = $("pages").children;
+  p = Math.max(0, Math.min(p, pages.length - 1));
+  if (p === shownPage) return;
+  const old = pages[shownPage], next = pages[p];
+  const forward = p > shownPage;
+  for (const el of pages) if (el !== old) el.classList.remove("shown", "turn-in", "turn-out", "under");
+  for (const k of [p - 1, p + 1, p + 2]) { const im = pages[k]?.querySelector("img"); if (im) im.loading = "eager"; }
+  next.querySelector("img").loading = "eager";
+  next.classList.add("shown");
+  if (old && !instant) {
+    old.classList.remove("turn-in", "turn-out", "under");
+    if (forward) { old.classList.add("shown", "turn-out"); next.classList.add("under"); }
+    else { old.classList.add("shown", "under"); next.classList.add("turn-in"); }
+    const done = () => {
+      old.classList.remove("turn-out", "under");
+      next.classList.remove("turn-in", "under");
+      if (+old.dataset.p !== shownPage) old.classList.remove("shown");
+    };
+    (forward ? old : next).addEventListener("animationend", done, { once: true });
+    setTimeout(done, 900);
+  } else if (old) old.classList.remove("shown");
+  shownPage = p;
+}
+
+function turnPage(dir) {
+  if (layout !== "book" || !book) return;
+  showPage(shownPage + dir);
+  const readingPage = book.sentences[cur].r[0][0];
+  follow = shownPage === readingPage;
+  $("back-to").classList.toggle("hidden", follow);
+  if (!playing && !follow && byPage[shownPage]?.length) {   // paused: reading continues from the page you turned to
+    setCur(byPage[shownPage][0]);
+    follow = true;
+    $("back-to").classList.add("hidden");
+  }
+}
+
+$("edgePrev").onclick = () => turnPage(-1);
+$("edgeNext").onclick = () => turnPage(1);
+$("layouts").onclick = (e) => {
+  const b = e.target.closest("button");
+  if (!b) return;
+  layout = b.dataset.l;
+  store.set("layout", layout);
+  follow = true;
+  applyLayout();
+};
+
+let touchX = null, touchY = null;
+$("pages").addEventListener("touchstart", (e) => { touchX = e.touches[0].clientX; touchY = e.touches[0].clientY; }, { passive: true });
+$("pages").addEventListener("touchend", (e) => {
+  if (layout !== "book" || touchX === null) return;
+  const dx = e.changedTouches[0].clientX - touchX, dy = e.changedTouches[0].clientY - touchY;
+  touchX = null;
+  if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.4) { e.preventDefault(); turnPage(dx < 0 ? 1 : -1); }
+});
+let wheelLock = 0;
+addEventListener("wheel", (e) => {
+  if (layout !== "book" || !book || $("reader").classList.contains("hidden")) return;
+  const now = Date.now();
+  if (now < wheelLock || Math.abs(e.deltaY) < 20) return;
+  wheelLock = now + 650;
+  turnPage(e.deltaY > 0 ? 1 : -1);
+}, { passive: true });
+
+// tapping a cover opens it like a book before the reader appears
+function openFromShelf(id, coverEl) {
+  const img = coverEl?.querySelector("img");
+  if (!img || matchMedia("(prefers-reduced-motion: reduce)").matches) { location.hash = "book=" + id; return; }
+  const r = coverEl.getBoundingClientRect();
+  const o = document.createElement("div");
+  o.className = "opening";
+  Object.assign(o.style, { left: r.left + "px", top: r.top + "px", width: r.width + "px", height: r.height + "px" });
+  o.innerHTML = `<div class="inside"></div><div class="leaf"><img src="${img.src}" alt=""></div>`;
+  document.body.appendChild(o);
+  const h = Math.min(innerHeight * 0.72, (innerWidth - 32) * 661 / 504), w = h * 504 / 661;
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    Object.assign(o.style, { left: (innerWidth - w) / 2 + "px", top: (innerHeight - h) / 2 + "px", width: w + "px", height: h + "px" });
+    o.classList.add("open");
+  }));
+  setTimeout(() => {
+    location.hash = "book=" + id;
+    $("reader").classList.add("arrive");
+    setTimeout(() => { o.remove(); $("reader").classList.remove("arrive"); }, 450);
+  }, 900);
+}
+
+// ---------- routing ----------
+function route() {
+  const m = location.hash.match(/book=(\w+)/);
+  if (m) { if (m[1] !== bid) openBook(m[1]); } else showLibrary();
+}
+addEventListener("hashchange", route);
+
+(async () => {
+  info = await api("/api/info");
+  const group = (label, voices) => Object.keys(voices).length
+    ? `<optgroup label="${label}">${Object.entries(voices).map(([k, v]) => `<option value="${k}">${esc(v)}</option>`).join("")}</optgroup>` : "";
+  $("voice").innerHTML = group("Natural", info.voices.natural) + group("Fast", info.voices.fast);
+  $("qr").innerHTML = info.qr;
+  $("phoneUrl").textContent = info.phoneUrl;
+  voice = pickVoice(store.get("voice", null));
+  syncSettings();
+  route();
+})();
+</script>
+</body>
+</html>

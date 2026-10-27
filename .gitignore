@@ -1,0 +1,21 @@
+# Users' own PDFs. Never commit these (copyright).
+books/*
+!books/.gitkeep
+
+# Personal voice samples and generated audio cache
+voices/*
+!voices/.gitkeep
+cache/
+
+# Local state
+progress.json
+samples/
+
+# Python / tooling
+.venv/
+__pycache__/
+*.pyc
+
+# OS junk
+.DS_Store
+Thumbs.db
