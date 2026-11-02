@@ -57,7 +57,8 @@
   .cover { aspect-ratio: 504 / 661; width: 100%; border-radius: 2px 5px 5px 2px; overflow: hidden; background: var(--raised);
     box-shadow: inset 3px 0 0 rgba(0,0,0,.18), 0 10px 24px -10px rgba(0,0,0,.5); }
   .cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
-  .shelf-item .t { font: 600 14px/1.35 var(--serif); margin-top: 10px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .shelf-item { min-width: 0; }
+  .shelf-item .t { font: 600 14px/1.35 var(--serif); margin-top: 10px; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
   .shelf-item .p { font-size: 13px; color: var(--muted); }
   .shelf-item:hover .cover { outline: 2px solid var(--brass); outline-offset: 3px; }
   .add { display: grid; place-items: center; aspect-ratio: 504 / 661; border: 1.5px dashed var(--rule); border-radius: 5px;
@@ -71,7 +72,7 @@
     .continue { grid-template-columns: 96px 1fr; gap: 18px; }
     .continue .cover { width: 96px; }
     .continue h2 { font-size: 20px; }
-    .shelf { grid-template-columns: repeat(3, 1fr); gap: 20px 14px; }
+    .shelf { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px 14px; }   /* minmax(0) so a wide cover can't push the row off-screen */
   }
 
   /* ---------- reader ---------- */
@@ -98,9 +99,11 @@
   @keyframes sweep { from { clip-path: inset(0 100% 0 0 round 3px); } to { clip-path: inset(0 0 0 0 round 3px); } }
 
   /* book mode: one page at a time, turned like paper */
-  body.paged { overflow: hidden; overscroll-behavior: none; }
+  html:has(body.paged) { overflow: hidden; overscroll-behavior: none; }
+  body.paged { position: fixed; inset: 0; overflow: hidden; overscroll-behavior: none; }   /* fixed so iOS can't rubber-band the page */
   body.paged #pages { position: fixed; left: 0; right: 0; top: var(--stage-top, 60px); bottom: var(--stage-bottom, 140px);
-    max-width: none; padding: 0; perspective: 2200px; touch-action: pan-y pinch-zoom; }
+    max-width: none; padding: 0; perspective: 2200px; touch-action: pinch-zoom; }
+  @media (max-width: 759px) { #layoutField { display: none; } }   /* phones always read in book pages */
   body.paged .page { position: absolute; left: 50%; top: 50%; margin: 0; translate: -50% -50%; display: none;
     width: var(--page-w); height: var(--page-h); aspect-ratio: auto !important; transform-style: preserve-3d; }
   body.paged .page.shown { display: block; }
@@ -280,7 +283,7 @@
     <span class="lbl">Speed</span>
     <div class="speeds" id="speeds"></div>
   </div>
-  <div class="field">
+  <div class="field" id="layoutField">
     <span class="lbl">Layout</span>
     <div class="speeds" id="layouts">
       <button class="pill" data-l="book">Book pages</button>
@@ -707,7 +710,7 @@ $("darkToggle").onchange = (e) => { store.set("darkpages", e.target.checked); do
 $("wakeToggle").onchange = updateWakeLock;
 
 // ---------- book mode ----------
-let layout = store.get("layout", innerWidth < 760 ? "book" : "scroll");
+let layout = matchMedia("(max-width: 759px)").matches ? "book" : store.get("layout", "scroll");
 let shownPage = -1;
 
 function fitPages() {
@@ -723,6 +726,7 @@ function fitPages() {
   document.body.style.setProperty("--page-h", Math.floor(ph * s) + "px");
 }
 addEventListener("resize", () => { if (layout === "book") fitPages(); });
+visualViewport?.addEventListener("resize", () => { if (layout === "book") fitPages(); });   // iOS toolbar showing/hiding
 
 function applyLayout() {
   document.body.classList.toggle("paged", layout === "book" && !!book);
