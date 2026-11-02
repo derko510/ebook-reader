@@ -6,7 +6,7 @@ A read-aloud PDF book reader that runs on your own PC.
 
 - Shows the real PDF pages, highlights the sentence being read, and follows along.
 - Book-page mode with page turns, or continuous scroll.
-- Works on a phone on the same Wi-Fi.
+- Works on a phone, at home or away over Tailscale.
 - Remembers your place across devices.
 
 ## Requirements
@@ -30,7 +30,7 @@ A read-aloud PDF book reader that runs on your own PC.
 
 ## Phone
 
-Open settings in the app and scan the QR code with your phone. The phone must be on the same Wi-Fi network. Windows Firewall may ask whether to allow Python on private networks. Allow it.
+Open `http://<computer's IP>:8765` in your phone's browser. Use the computer's Wi-Fi IP at home, or its Tailscale IP from anywhere. Windows Firewall may ask whether to allow Python on private networks. Allow it.
 
 ## How it works
 

@@ -2,7 +2,6 @@
 import hashlib
 import io
 import json
-import socket
 import asyncio
 import threading
 import warnings
@@ -13,7 +12,6 @@ warnings.filterwarnings("ignore")
 
 import numpy as np
 import pymupdf
-import segno
 import soundfile as sf
 import torch
 import uvicorn
@@ -261,21 +259,10 @@ async def put_progress(bid: str, request: Request):
     return {"ok": True}
 
 
-def lan_ip() -> str:
-    try:
-        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
-            s.connect(("10.255.255.255", 1))
-            return s.getsockname()[0]
-    except OSError:
-        return "127.0.0.1"
-
-
 @app.get("/api/info")
 def info():
-    url = f"http://{lan_ip()}:{PORT}"
-    qr = segno.make(url).svg_inline(omitsize=True, border=1, dark="#000", light="#fff")  # viewBox only, so CSS can size it
     return {"voices": all_voices(), "defaultVoice": resolve_voice(DEFAULT_VOICE),
-            "voicesFolder": str(MY_VOICES), "phoneUrl": url, "qr": qr}
+            "voicesFolder": str(MY_VOICES)}
 
 
 app.mount("/static", StaticFiles(directory=ROOT / "static"), name="static")
@@ -283,8 +270,6 @@ app.mount("/static", StaticFiles(directory=ROOT / "static"), name="static")
 if __name__ == "__main__":
     print()
     print(f"  Book reader is running.")
-    print(f"  On this PC:     http://localhost:{PORT}")
-    print(f"  On your phone:  http://{lan_ip()}:{PORT}   (same Wi-Fi)")
-    print(f"  Close this window to stop it.")
+    print(f"  Open http://localhost:{PORT}")
     print()
     uvicorn.run(app, host="0.0.0.0", port=PORT, log_level="warning")
