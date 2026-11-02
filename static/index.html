@@ -101,8 +101,9 @@
   /* book mode: one page at a time, turned like paper */
   html:has(body.paged) { overflow: hidden; overscroll-behavior: none; }
   body.paged { position: fixed; inset: 0; overflow: hidden; overscroll-behavior: none; }   /* fixed so iOS can't rubber-band the page */
+  body.paged { touch-action: manipulation; }   /* no double-tap zoom */
   body.paged #pages { position: fixed; left: 0; right: 0; top: var(--stage-top, 60px); bottom: var(--stage-bottom, 140px);
-    max-width: none; padding: 0; perspective: 2200px; touch-action: pinch-zoom; }
+    max-width: none; padding: 0; perspective: 2200px; touch-action: none; }
   @media (max-width: 759px) { #layoutField { display: none; } }   /* phones always read in book pages */
   body.paged .page { position: absolute; left: 50%; top: 50%; margin: 0; translate: -50% -50%; display: none;
     width: var(--page-w); height: var(--page-h); aspect-ratio: auto !important; transform-style: preserve-3d; }
@@ -637,6 +638,10 @@ function userScrolled() {
 }
 addEventListener("wheel", userScrolled, { passive: true });
 addEventListener("touchmove", (e) => { if (!e.target.closest("#dock")) userScrolled(); }, { passive: true });
+// book mode: nothing on the page should drag, pan or zoom; swipes still turn pages via touchend
+document.addEventListener("touchmove", (e) => {
+  if (document.body.classList.contains("paged") && !e.target.closest("#sheet, #seek, #chapter")) e.preventDefault();
+}, { passive: false });
 $("back-to").onclick = () => { follow = true; scrollToCur(true); };
 
 // ---------- controls ----------
